@@ -4,54 +4,41 @@ class Dominoes
     return [] if dominoes_array.empty?
     return single_play(dominoes_array.first) if dominoes_array.length == 1
 
-    number_matches =  dominoes_array.flatten.group_by{|x| x}.flatten.select{|y| y.is_a?(Array)}.sort_by(&:size)
+    grouped_by_number = dominoes_array.flatten.group_by{|x| x}.flatten
+
+    number_matches =  grouped_by_number.select{|y| y.is_a?(Array) }
 
     return [] unless number_matches.present?
 
-    @dominoes = dominoes_array.collect{|d| Dominoe.new(d[0], d[1])}
+    @original_dominoes = dominoes_array.collect{|d| Dominoe.new(d[0], d[1])}
 
-    loop_matches(number_matches)
+    merge_matches(number_matches, @original_dominoes.clone)
   end
 
-  def self.loop_matches(number_matches)
-    number_matches.each do |first_match|
-      result = attempt_complete_chain(@dominoes.clone, first_match)
-      return result if success(result)
+  def self.merge_matches(number_matches, cloned_dominoes)
+    chained_list = extract_pair(number_matches.pop[0], cloned_dominoes)
+    return nil if chained_list.nil?
+
+    number_matches.each do |match|
+      chained_list.merge(extract_pair(match[0], cloned_dominoes), cloned_dominoes)
     end
-    return nil
+
+    while popped = cloned_dominoes.pop do
+      chained_list = chained_list.try_adding(popped)
+    end
+
+    chained_list.dominoes if success(chained_list.dominoes)
   end
 
   def self.success(chain)
-    chain&.length == @dominoes.length
+    chain&.length == @original_dominoes.length
   end
 
-  def self.attempt_complete_chain(cloned_dominoes, matches)
-
-    puts "matching numbers #{matches}"
-
-    chained_list = start_chain(matches[0], cloned_dominoes)
-
-    return nil if chained_list.nil?
-
-    while popped = cloned_dominoes.pop do
-      # puts "popped #{popped}"
-      # puts "chained #{chained_list}"
-      # puts "cloned_dominoes #{cloned_dominoes}"
-      chained_list = chained_list.add(popped)
-    end
-
-    # if !success(chained_list) && matches.length > 2 && matches.length > attempt
-    #   return attempt_complete_chain(@dominoes.clone, matches)
-    # end
-
-    chained_list.dominoes_chain
-  end
-
-  def self.start_chain(number, dominoes)
+  def self.extract_pair(number, dominoes)
     matching = dominoes.select { |dom| dom.has_number?(number) }
     return nil if matching.size < 2
     first = dominoes.delete(matching[0])
-    second = dominoes.delete(matching[1])
+    second = dominoes.delete(matching[1]) || first
     first.new_chain(second)
   end
 
@@ -92,8 +79,6 @@ class Dominoe < Struct.new(:left, :right)
       DominoeChain.new([self.reverse, other_dominoe])
     elsif left == other_dominoe.right
       DominoeChain.new([self.reverse, other_dominoe.reverse])
-    else
-      nil
     end
   end
 end
@@ -101,50 +86,48 @@ end
 
 class DominoeChain
 
-  attr_reader :dominoes_chain
+  attr_reader :dominoes
 
   def initialize(dominoes)
-    @dominoes_chain = dominoes
+    @dominoes = dominoes
   end
 
   def left_end
-    dominoes_chain.first.left
+    dominoes.first.left
   end
 
   def right_end
-    dominoes_chain.last.right
+    dominoes.last.right
   end
 
-  def reverse
-    DominoeChain.new(dominoes_chain.reverse)
-  end
+  def merge(new_dominoe_chain, dominoe_stack)
+    return if new_dominoe_chain.nil?
 
-  def merge(other_dominoe_chain)
-    if right_end == other_dominoe_chain.left_end
-      DominoeChain.new(dominoes_chain + other_dominoe_chain.dominoes_chain)
-    elsif right == other_dominoe_chain.right
-      DominoeChain.new(dominoes_chain + other_dominoe_chain.dominoes_chain.reverse)
-    elsif left == other_dominoe_chain.left
-      DominoeChain.new(dominoes_chain.reverse + other_dominoe_chain.dominoes_chain)
-      [self.reverse, other_dominoe_chain]
-    elsif left == other_dominoe_chain.right
-      DominoeChain.new(dominoes_chain.reverse + other_dominoe_chain.dominoes_chain.reverse)
+    if right_end == new_dominoe_chain.left_end
+      @dominoes += new_dominoe_chain.dominoes
+    elsif right_end == new_dominoe_chain.right_end
+      @dominoes += new_dominoe_chain.dominoes.reverse
+    elsif left_end == new_dominoe_chain.left_end
+      @dominoes = @dominoes.reverse += new_dominoe_chain.dominoes
+    elsif left_end == new_dominoe_chain.right_end
+      @dominoes = @dominoes.reverse += new_dominoe_chain.dominoes.reverse
     else
-      nil
+      # if you can't merge them put them back
+      dominoe_stack += new_dominoe_chain.dominoes
     end
   end
 
-  def add(dominoe)
+  def try_adding(dominoe)
     if dominoe.left == right_end
-      @dominoes_chain = dominoes_chain << dominoe
+      @dominoes = dominoes << dominoe
     elsif dominoe.right == right_end
-      @dominoes_chain = dominoes_chain << dominoe.reverse
+      @dominoes = dominoes << dominoe.reverse
     # Not sure why the rules don't allow adding to the start
     # elsif dominoe.left == dominoes.left
-      # dominoes_chain =  dominoes_chain << self.reverse
-    #   return dominoes_chain.insert(0, dominoe.reverse)
+      # dominoes =  dominoes << self.reverse
+    #   return dominoes.insert(0, dominoe.reverse)
     # elsif dominoe,right == dominoes.left_end
-    #   return dominoes_chain.insert(0, dominoe)
+    #   return dominoes.insert(0, dominoe)
     end
     self
   end
