@@ -17,56 +17,56 @@ class DominoesTest < Minitest::Test
   end
 
   def test_singleton_that_can_not_be_chained
-    # skip
+    skip
     input_dominoes = [[1, 2]]
     output_chain = Dominoes.chain(input_dominoes)
     refute_correct_chain(input_dominoes, output_chain)
   end
 
   def test_three_elements
-    skip
+    # skip
     input_dominoes = [[1, 2], [3, 1], [2, 3]]
     output_chain = Dominoes.chain(input_dominoes)
     assert_correct_chain(input_dominoes, output_chain)
   end
 
   def test_can_reverse_dominoes
-    skip
+    # skip
     input_dominoes = [[1, 2], [1, 3], [2, 3]]
     output_chain = Dominoes.chain(input_dominoes)
     assert_correct_chain(input_dominoes, output_chain)
   end
 
   def test_can_not_be_chained
-    skip
+    # skip
     input_dominoes = [[1, 2], [4, 1], [2, 3]]
     output_chain = Dominoes.chain(input_dominoes)
     refute_correct_chain(input_dominoes, output_chain)
   end
 
   def test_disconnected_simple
-    skip
+    # skip
     input_dominoes = [[1, 1], [2, 2]]
     output_chain = Dominoes.chain(input_dominoes)
     refute_correct_chain(input_dominoes, output_chain)
   end
 
   def test_disconnected_double_loop
-    skip
+    # skip
     input_dominoes = [[1, 2], [2, 1], [3, 4], [4, 3]]
     output_chain = Dominoes.chain(input_dominoes)
     refute_correct_chain(input_dominoes, output_chain)
   end
 
   def test_disconnected_single_isolated
-    skip
+    # skip
     input_dominoes = [[1, 2], [2, 3], [3, 1], [4, 4]]
     output_chain = Dominoes.chain(input_dominoes)
     refute_correct_chain(input_dominoes, output_chain)
   end
 
   def test_need_backtrack
-    skip
+    # skip
     input_dominoes = [[1, 2], [2, 3], [3, 1], [2, 4], [2, 4]]
     output_chain = Dominoes.chain(input_dominoes)
     assert_correct_chain(input_dominoes, output_chain)

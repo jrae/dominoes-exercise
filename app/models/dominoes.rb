@@ -4,42 +4,54 @@ class Dominoes
     return [] if dominoes_array.empty?
     return single_play(dominoes_array.first) if dominoes_array.length == 1
 
-    number_match =  dominoes_array.flatten.group_by{|x| x}.flatten.select{|y| y.is_a?(Array)}.sort_by(&:size).last
+    number_matches =  dominoes_array.flatten.group_by{|x| x}.flatten.select{|y| y.is_a?(Array)}.sort_by(&:size)
 
-    return [] unless number_match.present?
+    return [] unless number_matches.present?
 
-    dominoes = dominoes_array.collect{|d| Dominoe.new(d[0], d[1])}
-    attempt_complete_chain(dominoes, number_match[0])
+    @dominoes = dominoes_array.collect{|d| Dominoe.new(d[0], d[1])}
+
+    loop_matches(number_matches)
   end
 
-  def self.attempt_complete_chain(dominoes, number, attempt=0)
-    doms = dominoes.clone
+  def self.loop_matches(number_matches)
+    number_matches.each do |first_match|
+      result = attempt_complete_chain(@dominoes.clone, first_match)
+      return result if result&.length == @dominoes.length
+    end
+    return nil
+  end
 
-    puts "number #{number}"
+  def self.attempt_complete_chain(cloned_doms, matches)
 
-    chained_list = start_chain(number, doms, attempt)
+    # puts "matching numbers #{matches}"
+
+    chained_list = start_chain(matches[0], cloned_doms)
+
     return nil if chained_list.empty?
 
-    doms -= chained_list
-
-    while popped = doms.pop do
-      puts "popped #{popped}"
-      puts "chained #{chained_list}"
-      puts "doms #{doms}"
+    while popped = cloned_doms.pop do
+      # puts "popped #{popped}"
+      # puts "chained #{chained_list}"
+      # puts "cloned_doms #{cloned_doms}"
       chained_list = popped.add_to_chain(chained_list)
     end
 
-    # if chained_list&.length != dominoes.length
+    # if chained_list&.length != @dominoes.length && matches.length > 2
     #   return attempt_complete_chain(dominoes, number, attempt+1)
     # end
 
     chained_list
   end
 
-  def self.start_chain(number, dominoes, offset)
+  def self.start_chain(number, dominoes)
     matching = dominoes.select { |dom| dom.has_number?(number) }
-    return [] if matching.size + offset < 2
-    matching[0 + offset].new_chain(matching[1 + offset])
+    return [] if matching.size < 2
+    first = matching[0]
+    second = matching[1]
+    chain = first.new_chain(second)
+    dominoes.delete(first)
+    dominoes.delete(second)
+    chain
   end
 
   def self.single_play(dominoe)
@@ -71,8 +83,8 @@ class Dominoe < Struct.new(:left, :right)
   end
 
   def add_to_chain(dominoes)
-    puts "add_to_chain #{self}"
-    puts "current_ch #{dominoes}"
+    # puts "add_to_chain #{self}"
+    # puts "current_ch #{dominoes}"
     if left == dominoes.last.right
       dominoes = dominoes << self
     elsif right == dominoes.last.right
