@@ -1,0 +1,13 @@
+defaults: &defaults
+  adapter: postgresql
+
+development:
+  <<: *defaults
+  database: dominoes_development
+
+test: &TEST
+  <<: *defaults
+  database: dominoes_test
+
+cucumber:
+  <<: *TEST
