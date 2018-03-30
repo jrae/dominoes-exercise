@@ -4,9 +4,9 @@ class Dominoes
     return [] if dominoes_array.empty?
     return single_play(dominoes_array.first) if dominoes_array.length == 1
 
-    number_matches = dominoes_array.flatten.group_by{|x| x}.flatten.select{|y| y.is_a?(Array) }
-
-    return [] unless number_matches.present?
+    # potential optimisation but not necassary
+    # number_matches = dominoes_array.flatten.group_by{|x| x}.flatten.select{|y| y.is_a?(Array) }
+    # return [] unless number_matches.present?
 
     dominoes = dominoes_array.collect.with_index do |d, index|
       Dominoe.new(d[0], d[1])
@@ -14,10 +14,10 @@ class Dominoes
 
     @original_length = dominoes.length
 
-    insertion_match(dominoes)
+    insertion_sort(dominoes)
   end
 
-  def self.insertion_match(dominoes)
+  def self.insertion_sort(dominoes)
     dominoe_chains = []
     while popped = dominoes.pop do
       dominoe_chains = add_dominoe_to_chains(popped, dominoe_chains)
@@ -28,14 +28,14 @@ class Dominoes
   def self.merge_chains(dominoe_chains)
     while result = dominoe_chains.pop do
       if dominoe_chains.any?
-        merge_chains_into_result(result, dominoe_chains)
+        merge_result_into_chains(result, dominoe_chains)
       else
         return result if success(result)
       end
     end
   end
 
-  def self.merge_chains_into_result(chain_to_merge, other_chains)
+  def self.merge_result_into_chains(chain_to_merge, other_chains)
     other_chains.each do |chain|
       break if chain.merge!(chain_to_merge)
     end
