@@ -4,16 +4,15 @@ class Dominoes
     return [] if dominoes_array.empty?
     return single_play(dominoes_array.first) if dominoes_array.length == 1
 
-    grouped_by_number = dominoes_array.flatten.group_by{|x| x}.flatten
-
-    number_matches =  grouped_by_number.select{|y| y.is_a?(Array) }
-    # .sort_by{|arr| arr.length}
+    number_matches = dominoes_array.flatten.group_by{|x| x}.flatten.select{|y| y.is_a?(Array) }
 
     return [] unless number_matches.present?
 
     dominoes = dominoes_array.collect.with_index do |d, index|
       Dominoe.new(d[0], d[1])
     end
+
+    @original_length = dominoes.length
 
     insertion_match(dominoes)
   end
@@ -23,18 +22,17 @@ class Dominoes
     while popped = dominoes.pop do
       dominoe_chains = add_dominoe_to_chains(popped, dominoe_chains)
     end
+    return merge_chains(dominoe_chains)&.dominoes
+  end
 
-    return dominoe_chains.first.dominoes  if dominoe_chains.length == 1
-
-    result = []
-    while chain_popped = dominoe_chains.pop do
-      # if we can merge then merge otherwise drop
-      result = merge_chains_into_result(chain_popped, dominoe_chains)
+  def self.merge_chains(dominoe_chains)
+    while result = dominoe_chains.pop do
+      if dominoe_chains.any?
+        merge_chains_into_result(result, dominoe_chains)
+      else
+        return result if success(result)
+      end
     end
-
-    debugger if result.length != 1
-
-    return result.first&.dominoes
   end
 
   def self.merge_chains_into_result(chain_to_merge, other_chains)
@@ -54,22 +52,8 @@ class Dominoes
     chains
   end
 
-  def self.merge_matches(number_matches, cloned_dominoes)
-    chained_list = extract_pair(number_matches.pop[0], cloned_dominoes)
-    return nil if chained_list.nil?
-    number_matches.each do |match|
-      chained_list.merge(extract_pair(match[0], cloned_dominoes), cloned_dominoes)
-    end
-
-    while popped = cloned_dominoes.pop do
-      chained_list = chained_list.try_adding(popped)
-    end
-
-    chained_list.dominoes if success(chained_list.dominoes)
-  end
-
   def self.success(chain)
-    chain&.length == @original_dominoes.length
+    chain.dominoes.length == @original_length
   end
 
   def self.extract_pair(number, dominoes)
@@ -152,11 +136,11 @@ class DominoeChain
       @dominoes = dominoes << dominoe
     elsif dominoe.right == right_end
       @dominoes = dominoes << dominoe.reverse
-    # Not sure why the rules don't allow adding to the start
     elsif dominoe.left == left_end
       @dominoes = dominoes.insert(0, dominoe.reverse)
-    elsif dominoe.right == left_end
-      @dominoes = dominoes.insert(0, dominoe)
+    # Not sure why the rules don't allow adding to the start
+    # elsif dominoe.right == left_end
+    #   @dominoes = dominoes.insert(0, dominoe)
     else
       return nil
     end
