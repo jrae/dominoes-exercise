@@ -11,11 +11,44 @@ class Dominoes
 
     return [] unless number_matches.present?
 
-    @original_dominoes = dominoes_array.collect.with_index do |d, index|
+    dominoes = dominoes_array.collect.with_index do |d, index|
       Dominoe.new(d[0], d[1])
     end
 
-    merge_matches(number_matches, @original_dominoes.clone)
+    insertion_match(dominoes)
+  end
+
+  def self.insertion_match(dominoes)
+    dominoe_chains = []
+    while popped = dominoes.pop do
+      dominoe_chains = add_dominoe_to_chains(popped, dominoe_chains)
+    end
+    result = dominoe_chains.pop
+
+    while chain_popped = dominoe_chains.pop do
+      # if we can merge then merge otherwise drop
+      result = merge_chains_into_result(chain_popped, dominoe_chains)
+    end
+
+    result = result.first if result.is_a?(Array)
+    return result&.dominoes
+  end
+
+  def self.merge_chains_into_result(chain_to_merge, other_chains)
+    other_chains.each do |chain|
+      break if chain.merge!(chain_to_merge)
+    end
+    other_chains
+  end
+
+  def self.add_dominoe_to_chains(dom, chains)
+    added_to_chain = false
+    chains.each do |chain|
+      added_to_chain = chain.try_adding(dom)
+      break if added_to_chain
+    end
+    chains << DominoeChain.new([dom]) unless added_to_chain
+    chains
   end
 
   def self.merge_matches(number_matches, cloned_dominoes)
@@ -94,19 +127,7 @@ class DominoeChain
     @dominoes = dominoes
   end
 
-  def left_end
-    dominoes.first.left
-  end
-
-  def right_end
-    dominoes.last.right
-  end
-
-  def reversed_dominoes
-    dominoes.inject([]) { |res, dom| res.insert(0, dom.reverse)}
-  end
-
-  def merge(new_dominoe_chain, dominoe_stack)
+  def merge!(new_dominoe_chain)
     return if new_dominoe_chain.nil?
 
     if right_end == new_dominoe_chain.left_end
@@ -117,9 +138,9 @@ class DominoeChain
       @dominoes = @dominoes.reverse += new_dominoe_chain.dominoes
     elsif left_end == new_dominoe_chain.right_end
       @dominoes = @dominoes.reverse += new_dominoe_chain.reversed_dominoes
-    else
+    # else
       # if you can't merge them put them back
-      dominoe_stack += new_dominoe_chain.dominoes
+      # dominoe_stack += new_dominoe_chain.dominoes
     end
   end
 
@@ -129,12 +150,26 @@ class DominoeChain
     elsif dominoe.right == right_end
       @dominoes = dominoes << dominoe.reverse
     # Not sure why the rules don't allow adding to the start
-    # elsif dominoe.left == left_end
-    #   @dominoes = dominoes.insert(0, dominoe.reverse)
-    # elsif dominoe.right == left_end
-    #   @dominoes = dominoes.insert(0, dominoe)
+    elsif dominoe.left == left_end
+      @dominoes = dominoes.insert(0, dominoe.reverse)
+    elsif dominoe.right == left_end
+      @dominoes = dominoes.insert(0, dominoe)
+    else
+      return nil
     end
     self
+  end
+
+  def left_end
+    dominoes.first.left
+  end
+
+  def right_end
+    dominoes.last.right
+  end
+
+  def reversed_dominoes
+    dominoes.inject([]) { |res, dom| res.insert(0, dom.reverse)}
   end
 
 end

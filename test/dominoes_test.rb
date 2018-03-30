@@ -66,7 +66,7 @@ class DominoesTest < Minitest::Test
   end
 
   def test_need_backtrack
-    # skip
+    skip
     input_dominoes = [[1, 2], [2, 3], [3, 1], [2, 4], [2, 4]]
     output_chain = Dominoes.chain(input_dominoes)
     assert_correct_chain(input_dominoes, output_chain)
