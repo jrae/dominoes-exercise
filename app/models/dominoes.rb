@@ -23,15 +23,18 @@ class Dominoes
     while popped = dominoes.pop do
       dominoe_chains = add_dominoe_to_chains(popped, dominoe_chains)
     end
-    result = dominoe_chains.pop
 
+    return dominoe_chains.first.dominoes  if dominoe_chains.length == 1
+
+    result = []
     while chain_popped = dominoe_chains.pop do
       # if we can merge then merge otherwise drop
       result = merge_chains_into_result(chain_popped, dominoe_chains)
     end
 
-    result = result.first if result.is_a?(Array)
-    return result&.dominoes
+    debugger if result.length != 1
+
+    return result.first&.dominoes
   end
 
   def self.merge_chains_into_result(chain_to_merge, other_chains)
@@ -135,9 +138,9 @@ class DominoeChain
     elsif right_end == new_dominoe_chain.right_end
       @dominoes += new_dominoe_chain.reversed_dominoes
     elsif left_end == new_dominoe_chain.left_end
-      @dominoes = @dominoes.reverse += new_dominoe_chain.dominoes
+      @dominoes = reversed_dominoes + new_dominoe_chain.dominoes
     elsif left_end == new_dominoe_chain.right_end
-      @dominoes = @dominoes.reverse += new_dominoe_chain.reversed_dominoes
+      @dominoes = reversed_dominoes + new_dominoe_chain.reversed_dominoes
     # else
       # if you can't merge them put them back
       # dominoe_stack += new_dominoe_chain.dominoes
